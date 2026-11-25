@@ -108,10 +108,18 @@ function App() {
     }
   };
 
-  const q = busqueda.trim().toLowerCase();
-  const filtrados = q
-    ? pacientes.filter((p) => `${p.nombre} ${p.especialidad} ${p.edad}`.toLowerCase().includes(q))
-    : pacientes;
+  const manejarBusqueda = (e) => {
+    setBusqueda(e.target.value);
+    setPagina(1);
+  };
+
+  const texto = busqueda.trim().toLowerCase();
+  const filtrados = pacientes.filter(
+    (p) =>
+      p.nombre.toLowerCase().includes(texto) ||
+      p.especialidad.toLowerCase().includes(texto) ||
+      String(p.edad).includes(texto)
+  );
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
   const visibles = filtrados.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
@@ -146,7 +154,7 @@ function App() {
           <h2>Lista de Pacientes</h2>
           <div className="buscador-caja">
             <Ico d="M11 3a8 8 0 1 0 0 16 8 8 0 0 0 0-16ZM21 21l-4.35-4.35" />
-            <input type="search" className="buscador" placeholder="Buscar paciente..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
+            <input type="search" className="buscador" placeholder="Buscar paciente..." value={busqueda} onChange={manejarBusqueda} />
           </div>
         </div>
 
