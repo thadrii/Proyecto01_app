@@ -3,6 +3,6 @@ module.exports = {
   db: {
     host: 'localhost',
     port: 27017,
-    database: 'mydb02',
+    database: 'sistema_pacientes',
   },
 }
