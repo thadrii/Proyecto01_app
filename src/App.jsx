@@ -34,6 +34,15 @@ const ICONOS = {
       </>
     ),
   },
+  buscar: {
+    cls: "icono-pop",
+    path: (
+      <>
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </>
+    ),
+  },
 };
 
 const Icono = ({ tipo, size = 15 }) => (
@@ -60,6 +69,7 @@ function App() {
   const [errores, setErrores] = useState({});
   const [idEditando, setIdEditando] = useState(null);
   const [pagina, setPagina] = useState(1);
+  const [busqueda, setBusqueda] = useState("");
   const [pacienteAEliminar, setPacienteAEliminar] = useState(null);
   const [enviando, setEnviando] = useState(false);
   const [aviso, setAviso] = useState("");
@@ -84,10 +94,12 @@ function App() {
   const validar = () => {
     const errs = {};
     if (!nombre.trim()) errs.nombre = "El nombre es obligatorio";
+    else if (/[<>]/.test(nombre)) errs.nombre = "No uses los símbolos < o >";
     const numEdad = Number(edad);
     if (!String(edad).trim()) errs.edad = "La edad es obligatoria";
     else if (!Number.isInteger(numEdad) || numEdad <= 0) errs.edad = "Ingresa una edad válida";
     if (!especialidad.trim()) errs.especialidad = "La especialidad es obligatoria";
+    else if (/[<>]/.test(especialidad)) errs.especialidad = "No uses los símbolos < o >";
     setErrores(errs);
     return Object.keys(errs).length === 0;
   };
@@ -170,8 +182,18 @@ function App() {
     }
   };
 
-  const totalPaginas = Math.max(1, Math.ceil(pacientes.length / POR_PAGINA));
-  const pacientesPaginados = pacientes.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
+  const termino = busqueda.trim().toLowerCase();
+  const pacientesFiltrados = termino
+    ? pacientes.filter(
+        (p) =>
+          p.nombre.toLowerCase().includes(termino) ||
+          p.especialidad.toLowerCase().includes(termino) ||
+          String(p.edad).includes(termino)
+      )
+    : pacientes;
+
+  const totalPaginas = Math.max(1, Math.ceil(pacientesFiltrados.length / POR_PAGINA));
+  const pacientesPaginados = pacientesFiltrados.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
   return (
     <div className="contenedor">
@@ -242,9 +264,27 @@ function App() {
       </form>
 
       <div className="lista">
-        <h2>Lista de Pacientes</h2>
+        <div className="lista-cabecera">
+          <h2>Lista de Pacientes</h2>
+          <div className="buscador-caja">
+            <Icono tipo="buscar" size={15} />
+            <input
+              type="search"
+              className="buscador"
+              placeholder="Buscar paciente..."
+              value={busqueda}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                setPagina(1);
+              }}
+            />
+          </div>
+        </div>
+
         {pacientes.length === 0 ? (
           <p>No hay pacientes registrados</p>
+        ) : pacientesFiltrados.length === 0 ? (
+          <p>No se encontraron pacientes</p>
         ) : (
           <>
             {pacientesPaginados.map((paciente) => (

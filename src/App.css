@@ -124,6 +124,48 @@ button:disabled { opacity: 0.45; box-shadow: none; cursor: not-allowed; }
 
 .info-paciente p { margin: 4px 0; }
 
+.lista-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.lista-cabecera h2 { margin: 0; }
+
+.buscador-caja {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  color: #64748b;
+  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+
+.buscador-caja:focus-within {
+  border-color: #1f3c88;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(31, 60, 136, 0.12);
+}
+
+.buscador {
+  width: 210px;
+  margin-bottom: 0;
+  padding: 7px 0;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+}
+
+.buscador:focus {
+  box-shadow: none;
+}
+
 /* Microinteracciones de iconos */
 .icono { transition: transform 0.2s ease; }
 button:hover:not(:disabled) .icono-pop { transform: scale(1.2); }
