@@ -2,264 +2,142 @@ import "./App.css";
 import { useEffect, useState } from "react";
 
 const POR_PAGINA = 2;
+const VACIO = { nombre: "", edad: "", especialidad: "" };
 
-const ICONOS = {
-  guardar: { cls: "icono-pop", path: <path d="M20 6 9 17l-5-5" /> },
-  editar: {
-    cls: "icono-lapiz",
-    path: (
-      <>
-        <path d="M12 20h9" />
-        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-      </>
-    ),
-  },
-  eliminar: {
-    cls: "icono-basura",
-    path: (
-      <>
-        <path d="M3 6h18" />
-        <path d="M8 6V4h8v2" />
-        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-      </>
-    ),
-  },
-  aviso: {
-    cls: "icono-aviso",
-    path: (
-      <>
-        <circle cx="12" cy="12" r="10" />
-        <line x1="12" y1="8" x2="12" y2="12" />
-        <line x1="12" y1="16" x2="12.01" y2="16" />
-      </>
-    ),
-  },
-  buscar: {
-    cls: "icono-pop",
-    path: (
-      <>
-        <circle cx="11" cy="11" r="8" />
-        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-      </>
-    ),
-  },
-};
-
-const Icono = ({ tipo, size = 15 }) => (
-  <svg
-    className={`icono ${ICONOS[tipo].cls}`}
-    viewBox="0 0 24 24"
-    width={size}
-    height={size}
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    {ICONOS[tipo].path}
+const Ico = ({ d, c = "" }) => (
+  <svg className={`ico ${c}`} viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d={d} />
   </svg>
 );
 
 function App() {
   const [pacientes, setPacientes] = useState([]);
-  const [nombre, setNombre] = useState("");
-  const [edad, setEdad] = useState("");
-  const [especialidad, setEspecialidad] = useState("");
+  const [form, setForm] = useState(VACIO);
   const [errores, setErrores] = useState({});
-  const [idEditando, setIdEditando] = useState(null);
+  const [editId, setEditId] = useState(null);
   const [pagina, setPagina] = useState(1);
   const [busqueda, setBusqueda] = useState("");
-  const [pacienteAEliminar, setPacienteAEliminar] = useState(null);
+  const [borrar, setBorrar] = useState(null);
   const [enviando, setEnviando] = useState(false);
   const [aviso, setAviso] = useState("");
 
-  const modoEdicion = idEditando !== null;
-
-  const mostrarAviso = (texto) => {
-    setAviso(texto);
+  const notificar = (txt) => {
+    setAviso(txt);
     setTimeout(() => setAviso(""), 3000);
   };
 
   useEffect(() => {
     fetch("/api/pacientes")
-      .then((res) => {
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then(setPacientes)
       .catch(() => setAviso("Sin conexión con MongoDB (inicia npm run server)"));
   }, []);
 
   const validar = () => {
-    const errs = {};
-    if (!nombre.trim()) errs.nombre = "El nombre es obligatorio";
-    else if (/[<>]/.test(nombre)) errs.nombre = "No uses los símbolos < o >";
-    const numEdad = Number(edad);
-    if (!String(edad).trim()) errs.edad = "La edad es obligatoria";
-    else if (!Number.isInteger(numEdad) || numEdad <= 0) errs.edad = "Ingresa una edad válida";
-    if (!especialidad.trim()) errs.especialidad = "La especialidad es obligatoria";
-    else if (/[<>]/.test(especialidad)) errs.especialidad = "No uses los símbolos < o >";
-    setErrores(errs);
-    return Object.keys(errs).length === 0;
+    const e = {};
+    if (!form.nombre.trim()) e.nombre = "El nombre es obligatorio";
+    else if (/[<>]/.test(form.nombre)) e.nombre = "No uses < ni >";
+    const n = Number(form.edad);
+    if (!String(form.edad).trim()) e.edad = "La edad es obligatoria";
+    else if (!Number.isInteger(n) || n <= 0) e.edad = "Ingresa una edad válida";
+    if (!form.especialidad.trim()) e.especialidad = "La especialidad es obligatoria";
+    else if (/[<>]/.test(form.especialidad)) e.especialidad = "No uses < ni >";
+    setErrores(e);
+    return Object.keys(e).length === 0;
   };
 
-  const limpiarFormulario = () => {
-    setNombre("");
-    setEdad("");
-    setEspecialidad("");
-    setErrores({});
-  };
-
-  const guardarPaciente = async (e) => {
+  const guardar = async (e) => {
     e.preventDefault();
     if (enviando || !validar()) return;
-
     setEnviando(true);
-    const datos = {
-      nombre: nombre.trim(),
-      edad: Number(edad),
-      especialidad: especialidad.trim(),
-    };
-
     try {
-      const url = modoEdicion ? `/api/pacientes/${idEditando}` : "/api/pacientes";
-      const res = await fetch(url, {
-        method: modoEdicion ? "PUT" : "POST",
+      const res = await fetch(editId ? `/api/pacientes/${editId}` : "/api/pacientes", {
+        method: editId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datos),
+        body: JSON.stringify({ nombre: form.nombre.trim(), edad: Number(form.edad), especialidad: form.especialidad.trim() }),
       });
       if (!res.ok) throw new Error();
-      const guardado = await res.json();
-
-      if (modoEdicion) {
-        setPacientes((prev) => prev.map((p) => (p._id === idEditando ? guardado : p)));
-        setIdEditando(null);
-        mostrarAviso("Paciente actualizado");
+      const doc = await res.json();
+      if (editId) {
+        setPacientes((p) => p.map((x) => (x._id === editId ? doc : x)));
+        setEditId(null);
+        notificar("Paciente actualizado");
       } else {
-        setPacientes((prev) => [guardado, ...prev]);
+        setPacientes((p) => [doc, ...p]);
         setPagina(1);
-        mostrarAviso("Paciente guardado");
+        notificar("Paciente guardado");
       }
-      limpiarFormulario();
+      setForm(VACIO);
+      setErrores({});
     } catch {
-      mostrarAviso("No se pudo guardar en MongoDB");
+      notificar("No se pudo guardar en MongoDB");
     } finally {
       setEnviando(false);
     }
   };
 
-  const editarPaciente = (paciente) => {
-    setIdEditando(paciente._id);
-    setNombre(paciente.nombre);
-    setEdad(String(paciente.edad));
-    setEspecialidad(paciente.especialidad);
+  const editar = (p) => {
+    setEditId(p._id);
+    setForm({ nombre: p.nombre, edad: String(p.edad), especialidad: p.especialidad });
     setErrores({});
   };
 
-  const cancelarEdicion = () => {
-    setIdEditando(null);
-    limpiarFormulario();
+  const cancelar = () => {
+    setEditId(null);
+    setForm(VACIO);
+    setErrores({});
   };
 
-  const confirmarEliminar = async () => {
-    if (!pacienteAEliminar || enviando) return;
+  const confirmarBorrar = async () => {
+    if (!borrar || enviando) return;
     setEnviando(true);
     try {
-      const res = await fetch(`/api/pacientes/${pacienteAEliminar._id}`, { method: "DELETE" });
+      const res = await fetch(`/api/pacientes/${borrar._id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       setPacientes((prev) => {
-        const restantes = prev.filter((p) => p._id !== pacienteAEliminar._id);
-        setPagina((actual) => Math.min(actual, Math.max(1, Math.ceil(restantes.length / POR_PAGINA))));
-        return restantes;
+        const list = prev.filter((x) => x._id !== borrar._id);
+        setPagina((a) => Math.min(a, Math.max(1, Math.ceil(list.length / POR_PAGINA))));
+        return list;
       });
-      setPacienteAEliminar(null);
-      mostrarAviso("Paciente eliminado");
+      setBorrar(null);
+      notificar("Paciente eliminado");
     } catch {
-      mostrarAviso("No se pudo eliminar el paciente");
+      notificar("No se pudo eliminar");
     } finally {
       setEnviando(false);
     }
   };
 
-  const termino = busqueda.trim().toLowerCase();
-  const pacientesFiltrados = termino
-    ? pacientes.filter(
-        (p) =>
-          p.nombre.toLowerCase().includes(termino) ||
-          p.especialidad.toLowerCase().includes(termino) ||
-          String(p.edad).includes(termino)
-      )
+  const q = busqueda.trim().toLowerCase();
+  const filtrados = q
+    ? pacientes.filter((p) => `${p.nombre} ${p.especialidad} ${p.edad}`.toLowerCase().includes(q))
     : pacientes;
-
-  const totalPaginas = Math.max(1, Math.ceil(pacientesFiltrados.length / POR_PAGINA));
-  const pacientesPaginados = pacientesFiltrados.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
+  const visibles = filtrados.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
   return (
     <div className="contenedor">
       <h1>Sistema de Pacientes</h1>
-      {aviso && (
-        <p className="aviso">
-          <Icono tipo="aviso" />
-          {aviso}
-        </p>
-      )}
+      {aviso && <p className="aviso"><Ico d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20ZM12 8v4M12 16h.01" />{aviso}</p>}
 
-      <form className="formulario" onSubmit={guardarPaciente} noValidate>
-        <h2>{modoEdicion ? "Editar Paciente" : "Registrar Paciente"}</h2>
+      <form className="formulario" onSubmit={guardar} noValidate>
+        <h2>{editId ? "Editar Paciente" : "Registrar Paciente"}</h2>
 
-        <input
-          type="text"
-          placeholder="Nombre del Paciente"
-          className={errores.nombre ? "input-error" : ""}
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-        />
-        {errores.nombre && (
-          <p className="error">
-            <Icono tipo="aviso" size={14} />
-            {errores.nombre}
-          </p>
-        )}
+        <input type="text" placeholder="Nombre del Paciente" className={errores.nombre ? "input-error" : ""} value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
+        {errores.nombre && <p className="error">{errores.nombre}</p>}
 
-        <input
-          type="number"
-          placeholder="Edad"
-          className={errores.edad ? "input-error" : ""}
-          value={edad}
-          onChange={(e) => setEdad(e.target.value)}
-        />
-        {errores.edad && (
-          <p className="error">
-            <Icono tipo="aviso" size={14} />
-            {errores.edad}
-          </p>
-        )}
+        <input type="number" placeholder="Edad" className={errores.edad ? "input-error" : ""} value={form.edad} onChange={(e) => setForm({ ...form, edad: e.target.value })} />
+        {errores.edad && <p className="error">{errores.edad}</p>}
 
-        <input
-          type="text"
-          placeholder="Especialidad"
-          className={errores.especialidad ? "input-error" : ""}
-          value={especialidad}
-          onChange={(e) => setEspecialidad(e.target.value)}
-        />
-        {errores.especialidad && (
-          <p className="error">
-            <Icono tipo="aviso" size={14} />
-            {errores.especialidad}
-          </p>
-        )}
+        <input type="text" placeholder="Especialidad" className={errores.especialidad ? "input-error" : ""} value={form.especialidad} onChange={(e) => setForm({ ...form, especialidad: e.target.value })} />
+        {errores.especialidad && <p className="error">{errores.especialidad}</p>}
 
         <div className="grupo-botones form-acciones">
-          <button type="submit" className={modoEdicion ? "btn-actualizar" : ""} disabled={enviando}>
-            <Icono tipo="guardar" size={16} />
-            {modoEdicion ? "Actualizar Paciente" : "Guardar Paciente"}
+          <button type="submit" className={editId ? "btn-actualizar" : ""} disabled={enviando}>
+            <Ico d="M20 6 9 17l-5-5" c="ico-pop" />
+            {editId ? "Actualizar Paciente" : "Guardar Paciente"}
           </button>
-          {modoEdicion && (
-            <button type="button" className="btn-cancelar" onClick={cancelarEdicion} disabled={enviando}>
-              Cancelar
-            </button>
-          )}
+          {editId && <button type="button" className="btn-cancelar" onClick={cancelar} disabled={enviando}>Cancelar</button>}
         </div>
       </form>
 
@@ -267,46 +145,30 @@ function App() {
         <div className="lista-cabecera">
           <h2>Lista de Pacientes</h2>
           <div className="buscador-caja">
-            <Icono tipo="buscar" size={15} />
-            <input
-              type="search"
-              className="buscador"
-              placeholder="Buscar paciente..."
-              value={busqueda}
-              onChange={(e) => {
-                setBusqueda(e.target.value);
-                setPagina(1);
-              }}
-            />
+            <Ico d="M11 3a8 8 0 1 0 0 16 8 8 0 0 0 0-16ZM21 21l-4.35-4.35" />
+            <input type="search" className="buscador" placeholder="Buscar paciente..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
           </div>
         </div>
 
         {pacientes.length === 0 ? (
           <p>No hay pacientes registrados</p>
-        ) : pacientesFiltrados.length === 0 ? (
+        ) : filtrados.length === 0 ? (
           <p>No se encontraron pacientes</p>
         ) : (
           <>
-            {pacientesPaginados.map((paciente) => (
-              <div key={paciente._id} className="card-paciente">
+            {visibles.map((p) => (
+              <div key={p._id} className="card-paciente">
                 <div className="info-paciente">
-                  <p><strong>Nombre:</strong> {paciente.nombre}</p>
-                  <p><strong>Edad:</strong> {paciente.edad}</p>
-                  <p><strong>Especialidad:</strong> {paciente.especialidad}</p>
+                  <p><strong>Nombre:</strong> {p.nombre}</p>
+                  <p><strong>Edad:</strong> {p.edad}</p>
+                  <p><strong>Especialidad:</strong> {p.especialidad}</p>
                 </div>
                 <div className="grupo-botones">
-                  <button type="button" className="editar" onClick={() => editarPaciente(paciente)}>
-                    <Icono tipo="editar" />
-                    Editar
+                  <button type="button" className="editar" onClick={() => editar(p)}>
+                    <Ico d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" c="ico-lapiz" />Editar
                   </button>
-                  <button
-                    type="button"
-                    className="eliminar"
-                    disabled={modoEdicion}
-                    onClick={() => setPacienteAEliminar(paciente)}
-                  >
-                    <Icono tipo="eliminar" />
-                    Eliminar
+                  <button type="button" className="eliminar" disabled={Boolean(editId)} onClick={() => setBorrar(p)}>
+                    <Ico d="M3 6h18M8 6V4h8v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" c="ico-basura" />Eliminar
                   </button>
                 </div>
               </div>
@@ -314,41 +176,27 @@ function App() {
 
             {totalPaginas > 1 && (
               <nav className="paginacion" aria-label="Paginación">
-                <a href="#primero" className={pagina === 1 ? "disabled" : ""} onClick={(e) => { e.preventDefault(); setPagina(1); }}>&laquo;</a>
-                <a href="#anterior" className={pagina === 1 ? "disabled" : ""} onClick={(e) => { e.preventDefault(); setPagina((p) => Math.max(1, p - 1)); }}>&lsaquo;</a>
+                <a href="#1" className={pagina === 1 ? "disabled" : ""} onClick={(e) => { e.preventDefault(); setPagina(1); }}>&laquo;</a>
+                <a href="#ant" className={pagina === 1 ? "disabled" : ""} onClick={(e) => { e.preventDefault(); setPagina((n) => Math.max(1, n - 1)); }}>&lsaquo;</a>
                 {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((num) => (
-                  <a
-                    key={num}
-                    href={`#p${num}`}
-                    className={num === pagina ? "activa" : ""}
-                    onClick={(e) => { e.preventDefault(); setPagina(num); }}
-                  >
-                    {num}
-                  </a>
+                  <a key={num} href={`#p${num}`} className={num === pagina ? "activa" : ""} onClick={(e) => { e.preventDefault(); setPagina(num); }}>{num}</a>
                 ))}
-                <a href="#siguiente" className={pagina === totalPaginas ? "disabled" : ""} onClick={(e) => { e.preventDefault(); setPagina((p) => Math.min(totalPaginas, p + 1)); }}>&rsaquo;</a>
-                <a href="#ultimo" className={pagina === totalPaginas ? "disabled" : ""} onClick={(e) => { e.preventDefault(); setPagina(totalPaginas); }}>&raquo;</a>
+                <a href="#sig" className={pagina === totalPaginas ? "disabled" : ""} onClick={(e) => { e.preventDefault(); setPagina((n) => Math.min(totalPaginas, n + 1)); }}>&rsaquo;</a>
+                <a href="#ult" className={pagina === totalPaginas ? "disabled" : ""} onClick={(e) => { e.preventDefault(); setPagina(totalPaginas); }}>&raquo;</a>
               </nav>
             )}
           </>
         )}
       </div>
 
-      {pacienteAEliminar && (
+      {borrar && (
         <div className="modal-fondo" role="dialog" aria-modal="true">
           <div className="modal-caja">
-            <span className="modal-icono">
-              <Icono tipo="aviso" size={30} />
-            </span>
-            <p>¿Estás seguro de eliminar a <strong>{pacienteAEliminar.nombre}</strong>?</p>
+            <span className="modal-icono"><Ico d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20ZM12 8v4M12 16h.01" /></span>
+            <p>¿Estás seguro de eliminar a <strong>{borrar.nombre}</strong>?</p>
             <div className="grupo-botones modal-botones">
-              <button type="button" className="eliminar" onClick={confirmarEliminar} disabled={enviando}>
-                <Icono tipo="eliminar" />
-                Sí
-              </button>
-              <button type="button" className="btn-cancelar" onClick={() => setPacienteAEliminar(null)} disabled={enviando}>
-                No
-              </button>
+              <button type="button" className="eliminar" onClick={confirmarBorrar} disabled={enviando}>Sí</button>
+              <button type="button" className="btn-cancelar" onClick={() => setBorrar(null)} disabled={enviando}>No</button>
             </div>
           </div>
         </div>

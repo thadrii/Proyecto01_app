@@ -167,10 +167,10 @@ button:disabled { opacity: 0.45; box-shadow: none; cursor: not-allowed; }
 }
 
 /* Microinteracciones de iconos */
-.icono { transition: transform 0.2s ease; }
-button:hover:not(:disabled) .icono-pop { transform: scale(1.2); }
-button:hover:not(:disabled) .icono-lapiz { transform: rotate(-14deg) scale(1.1); }
-button:hover:not(:disabled) .icono-basura { animation: trashShake 0.35s ease; }
+.ico { transition: transform 0.2s ease; }
+button:hover:not(:disabled) .ico-pop { transform: scale(1.2); }
+button:hover:not(:disabled) .ico-lapiz { transform: rotate(-14deg) scale(1.1); }
+button:hover:not(:disabled) .ico-basura { animation: trashShake 0.35s ease; }
 .modal-icono { display: inline-block; color: #ef4444; animation: pulseWarn 1.3s ease-in-out infinite; }
 
 .paginacion {
