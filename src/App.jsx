@@ -1,14 +1,9 @@
 import "./App.css";
 import { useEffect, useState } from "react";
+import { AlertCircle, Check, Pencil, Search, Trash2 } from "lucide-react";
 
 const POR_PAGINA = 2;
 const VACIO = { nombre: "", edad: "", especialidad: "" };
-
-const Ico = ({ d, c = "" }) => (
-  <svg className={`ico ${c}`} viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <path d={d} />
-  </svg>
-);
 
 function App() {
   const [pacientes, setPacientes] = useState([]);
@@ -126,7 +121,7 @@ function App() {
   return (
     <div className="contenedor">
       <h1>Sistema de Pacientes</h1>
-      {aviso && <p className="aviso"><Ico d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20ZM12 8v4M12 16h.01" />{aviso}</p>}
+      {aviso && <p className="aviso"><AlertCircle size={15} />{aviso}</p>}
 
       <form className="formulario" onSubmit={guardar} noValidate>
         <h2>{editId ? "Editar Paciente" : "Registrar Paciente"}</h2>
@@ -142,7 +137,7 @@ function App() {
 
         <div className="grupo-botones form-acciones">
           <button type="submit" className={editId ? "btn-actualizar" : ""} disabled={enviando}>
-            <Ico d="M20 6 9 17l-5-5" c="ico-pop" />
+            <Check size={16} className="ico ico-pop" />
             {editId ? "Actualizar Paciente" : "Guardar Paciente"}
           </button>
           {editId && <button type="button" className="btn-cancelar" onClick={cancelar} disabled={enviando}>Cancelar</button>}
@@ -153,7 +148,7 @@ function App() {
         <div className="lista-cabecera">
           <h2>Lista de Pacientes</h2>
           <div className="buscador-caja">
-            <Ico d="M11 3a8 8 0 1 0 0 16 8 8 0 0 0 0-16ZM21 21l-4.35-4.35" />
+            <Search size={15} />
             <input type="search" className="buscador" placeholder="Buscar paciente..." value={busqueda} onChange={manejarBusqueda} />
           </div>
         </div>
@@ -173,10 +168,10 @@ function App() {
                 </div>
                 <div className="grupo-botones">
                   <button type="button" className="editar" onClick={() => editar(p)}>
-                    <Ico d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" c="ico-lapiz" />Editar
+                    <Pencil size={15} className="ico ico-lapiz" />Editar
                   </button>
                   <button type="button" className="eliminar" disabled={Boolean(editId)} onClick={() => setBorrar(p)}>
-                    <Ico d="M3 6h18M8 6V4h8v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" c="ico-basura" />Eliminar
+                    <Trash2 size={15} className="ico ico-basura" />Eliminar
                   </button>
                 </div>
               </div>
@@ -200,7 +195,7 @@ function App() {
       {borrar && (
         <div className="modal-fondo" role="dialog" aria-modal="true">
           <div className="modal-caja">
-            <span className="modal-icono"><Ico d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20ZM12 8v4M12 16h.01" /></span>
+            <span className="modal-icono"><AlertCircle size={28} /></span>
             <p>¿Estás seguro de eliminar a <strong>{borrar.nombre}</strong>?</p>
             <div className="grupo-botones modal-botones">
               <button type="button" className="eliminar" onClick={confirmarBorrar} disabled={enviando}>Sí</button>
